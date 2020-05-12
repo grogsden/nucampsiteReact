@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
-import { Card, CardImg, CardText, CardBody, Col, Row, Button, Label, Modal, ModalBody, ModalHeader, Breadcrumb, BreadcrumbItem } from 'reactstrap';
+import { Card, CardImg, CardText, CardBody, Button, Label, Modal, ModalBody, ModalHeader, Breadcrumb, BreadcrumbItem } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import { Control, LocalForm, Errors } from 'react-redux-form';
+import { Loading } from './loadingComponent';
 
 const maxLength = len => val => !val || (val.length <= len);
 const minLength = len => val => val && (val.length >= len);
@@ -22,9 +23,9 @@ class CommentForm extends Component {
         //this.toggleModal = this.toggleModal.bind(this);
     }
 
-    handleSubmit = (values) => {
-        console.log("Current state is:" + JSON.stringify(values));
-        alert("Current state is:" + JSON.stringify(values));
+    handleSubmit(values) {
+        this.toggleModal();
+        this.props.addComment(this.props.campsiteId, values.rating, values.author, values.text);
     }
 
     toggleModal = () => {
@@ -73,8 +74,8 @@ class CommentForm extends Component {
                                 />
                             </div>
                             <div className="form-group">
-                                <Label htmlFor="comment">Comment</Label><br />
-                                <Control.textarea row="6" model=".comment" id="comment" name="comment" className="form-control" />
+                                <Label htmlFor="text">Comment</Label><br />
+                                <Control.textarea row="6" model=".text" id="text" name="text" className="form-control" />
                             </div>
 
                             <Button type="submit" color="primary">
@@ -105,7 +106,7 @@ function RenderCampsite({ campsite }) {
     )
 }
 
-function RenderComments({ comments }) {
+function RenderComments({ comments, addComment, campsiteId }) {
     if (comments) {
         return (
             <div className="col-md-5 m-1">
@@ -114,12 +115,12 @@ function RenderComments({ comments }) {
                     return (
                         <div key={comment.id}>
                             <div>{comment.text}</div>
-                            <div>{comment.author}, {new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(Date.parse(comment.date)))}</div>
+                            <div>--{comment.author}, {new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(Date.parse(comment.date)))}</div><br />
                         </div>
                     );
                 })}
                 <br />
-                <CommentForm />
+                <CommentForm campsiteId={campsiteId} addComment={addComment} />
             </div>
         );
     }
@@ -127,6 +128,26 @@ function RenderComments({ comments }) {
 }
 
 function CampsiteInfo(props) {
+    if (props.isLoading) {
+        return(
+            <div className="container">
+                <div className="row">
+                    <Loading />
+                </div>
+            </div>
+        );
+    }
+    if (props.errMess) {
+        return (
+            <div className="container">
+                <div className="row">
+                    <div className="col">
+                        <h4>{props.errMess}</h4>
+                    </div>
+                </div>
+            </div>
+        );
+    }
     if (props.campsite) {
         return (
             <div className="container">
@@ -142,7 +163,11 @@ function CampsiteInfo(props) {
                 </div>
                 <div className="row">
                     <RenderCampsite campsite={props.campsite} />
-                    <RenderComments comments={props.comments} />
+                    <RenderComments 
+                        comments={props.comments}
+                        addComment={props.addComment}
+                        campsiteId={props.campsite.id}
+                    />
                 </div>
             </div>
         );
